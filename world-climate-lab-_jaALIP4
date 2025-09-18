@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Climate Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-color: #ffffff;
+            --text-color: #1e293b;
+            --card-bg: #f8fafc;
+            --border-color: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #3b82f6;
+            --secondary-color: #94a3b8;
+            --success-color: #22c55e;
+            --warning-color: #fbbf24;
+            --danger-color: #f87171;
+            --bg-color: #0f172a;
+            --text-color: #f1f5f9;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+        }
+
+        * {
+            transition: all 0.3s ease;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background-color: var(--card-bg) !important;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: #1e293b;
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .regional-btn {
+            margin: 2px;
+            font-size: 0.875rem;
+        }
+
+        .regional-btn.active {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+        }
+
+        .simulation-controls {
+            background: linear-gradient(135deg, var(--card-bg), var(--bg-color));
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .ai-copilot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            z-index: 1050;
+        }
+
+        .ai-chat {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .chat-message.user {
+            background-color: var(--primary-color);
+            color: white;
+            margin-left: 20px;
+        }
+
+        .chat-message.ai {
+            background-color: var(--secondary-color);
+            color: white;
+            margin-right: 20px;
+        }
+
+        .view-panel {
+            display: none;
+        }
+
+        .view-panel.active {
+            display: block;
+        }
+
+        .modal {
+            --bs-modal-bg: var(--card-bg);
+            --bs-modal-color: var(--text-color);
+        }
+
+        .form-control {
+            background-color: var(--bg-color);
+            border-color: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .form-control:focus {
+            background-color: var(--bg-color);
+            border-color: var(--primary-color);
+            color: var(--text-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.online {
+            background-color: var(--success-color);
+        }
+
+        .status-indicator.offline {
+            background-color: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-globe-americas text-primary me-2"></i>
+                World Climate Lab
+            </a>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge bg-success">
+                    <span class="status-indicator online"></span>
+                    System Online
+                </span>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn btn-outline-primary" id="settingsBtn">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid py-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">Navigation</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary view-nav-btn active" data-view="dashboard">
+                                <i class="fas fa-chart-dashboard me-2"></i>Dashboard
+                            </button>
+                            <button class="btn btn-outline-primary view-nav-btn" data-view="simulator">
+                                <i class="fas fa-flask me-2"></i>Simulator
+                            </button>
+                            <button class="btn btn-outline-primary view-nav-btn" data-view="analysis">
+                                <i class="fas fa-chart-line me-2"></i>Analysis
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">Regional Focus</h6>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary btn-sm regional-btn active" data-region="global">Global</button>
+                        <button class="btn btn-outline-primary btn-sm regional-btn" data-region="north-america">North America</button>
+                        <button class="btn btn-outline-primary btn-sm regional-btn" data-region="europe">Europe</button>
+                        <button class="btn btn-outline-primary btn-sm regional-btn" data-region="asia">Asia</button>
+                        <button class="btn btn-outline-primary btn-sm regional-btn" data-region="africa">Africa</button>
+                        <button class="btn btn-outline-primary btn-sm regional-btn" data-region="south-america">South America</button>
+                        <button class="btn btn-outline-primary btn-sm regional-btn" data-region="oceania">Oceania</button>
+                        <button class="btn btn-outline-primary btn-sm regional-btn" data-region="arctic">Arctic</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Panel -->
+            <div class="col-md-9">
+                <!-- Dashboard View -->
+                <div id="dashboard" class="view-panel active">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Global Climate Dashboard</h5>
+                                    <button class="btn btn-success" id="refreshData">
+                                        <i class="fas fa-sync-alt me-1"></i>Refresh Data
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="card bg-primary text-white">
+                                                <div class="card-body text-center">
+                                                    <h3 id="globalTemp">15.2°C</h3>
+                                                    <p class="mb-0">Global Avg Temp</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card bg-info text-white">
+                                                <div class="card-body text-center">
+                                                    <h3 id="co2Level">421</h3>
+                                                    <p class="mb-0">CO₂ ppm</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card bg-warning text-dark">
+                                                <div class="card-body text-center">
+                                                    <h3 id="seaLevel">+3.6mm</h3>
+                                                    <p class="mb-0">Sea Level Rise</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card bg-success text-white">
+                                                <div class="card-body text-center">
+                                                    <h3 id="iceExtent">4.9M</h3>
+                                                    <p class="mb-0">Arctic Ice (km²)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="chart-container mt-4">
+                                        <canvas id="temperatureChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulator View -->
+                <div id="simulator" class="view-panel">
+                    <div class="simulation-controls">
+                        <h5>Climate Simulation Controls</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">CO₂ Emission Rate</label>
+                                <input type="range" class="form-range" id="co2Range" min="300" max="600" value="421">
+                                <span id="co2Value">421 ppm</span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Simulation Years</label>
+                                <input type="range" class="form-range" id="yearsRange" min="5" max="100" value="50">
+                                <span id="yearsValue">50 years</span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Scenario</label>
+                                <select class="form-select" id="scenarioSelect">
+                                    <option value="optimistic">Optimistic</option>
+                                    <option value="moderate" selected>Moderate</option>
+                                    <option value="pessimistic">Pessimistic</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary btn-lg" id="runSimulation">
+                                <i class="fas fa-play me-2"></i>Run Simulation
+                            </button>
+                            <button class="btn btn-secondary ms-2" id="resetSimulation">
+                                <i class="fas fa-undo me-2"></i>Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Simulation Results</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="simulationChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis View -->
+                <div id="analysis" class="view-panel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Climate Data Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="chart-container">
+                                        <canvas id="co2Chart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="chart-container">
+                                        <canvas id="seaLevelChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Co-Pilot -->
+    <div class="ai-copilot">
+        <div class="card" id="aiCopilotPanel" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-robot me-2"></i>AI Co-Pilot
+                </h6>
+                <button class="btn-close" id="closeCopilot"></button>
+            </div>
+            <div class="card-body p-0">
+                <div class="ai-chat" id="aiChat">
+                    <div class="chat-message ai">
+                        <i class="fas fa-robot me-2"></i>
+                        Hello! I'm your Climate AI assistant. How can I help you today?
+                    </div>
+                </div>
+                <div class="p-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="aiInput" placeholder="Ask about climate data...">
+                        <button class="btn btn-primary" id="sendAiMessage">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-primary ai-quick-btn" data-question="What's the current global temperature trend?">Temperature Trends</button>
+                        <button class="btn btn-sm btn-outline-primary ai-quick-btn" data-question="Explain CO2 impact on climate">CO2 Impact</button>
+                        <button class="btn btn-sm btn-outline-primary ai-quick-btn" data-question="Show me sea level projections">Sea Level</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary rounded-circle" id="aiCopilotToggle" style="width: 60px; height: 60px;">
+            <i class="fas fa-robot fa-lg"></i>
+        </button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="settingsForm">
+                        <div class="mb-3">
+                            <label for="apiKey" class="form-label">API Key</label>
+                            <input type="password" class="form-control" id="apiKey" placeholder="Enter your API key">
+                            <div class="form-text">Used for accessing climate data services</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="refreshInterval" class="form-label">Data Refresh Interval (minutes)</label>
+                            <select class="form-select" id="refreshInterval">
+                                <option value="5">5 minutes</option>
+                                <option value="15" selected>15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notifications">
+                                <label class="form-check-label" for="notifications">
+                                    Enable notifications for extreme weather alerts
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveSettings">Save Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state management
+        const ClimateApp = {
+            currentView: 'dashboard',
+            currentRegion: 'global',
+            theme: localStorage.getItem('climate-theme') || 'light',
+            apiKey: localStorage.getItem('climate-api-key') || '',
+            settings: JSON.parse(localStorage.getItem('climate-settings') || '{}'),
+            charts: {},
+            
+            init() {
+                this.initTheme();
+                this.initEventListeners();
+                this.initCharts();
+                this.loadSettings();
+                this.updateDashboard();
+            },
+
+            // Theme Management
+            initTheme() {
+                document.documentElement.setAttribute('data-theme', this.theme);
+                const themeIcon = document.querySelector('#themeToggle i');
+                themeIcon.className = this.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            },
+
+            toggleTheme() {
+                this.theme = this.theme === 'light' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', this.theme);
+                localStorage.setItem('climate-theme', this.theme);
+                
+                const themeIcon = document.querySelector('#themeToggle i');
+                themeIcon.className = this.theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                
+                // Update charts for new theme
+                setTimeout(() => this.updateChartsTheme(), 100);
+            },
+
+            // Event Listeners
+            initEventListeners() {
+                // Theme toggle
+                document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
+
+                // Settings modal
+                document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
+                document.getElementById('saveSettings').addEventListener('click', () => this.saveSettings());
+
+                // View navigation
+                document.querySelectorAll('.view-nav-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.switchView(e.target.dataset.view));
+                });
+
+                // Regional buttons
+                document.querySelectorAll('.regional-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.switchRegion(e.target.dataset.region));
+                });
+
+                // Simulation controls
+                document.getElementById('runSimulation').addEventListener('click', () => this.runSimulation());
+                document.getElementById('resetSimulation').addEventListener('click', () => this.resetSimulation());
+                
+                // Range inputs
+                document.getElementById('co2Range').addEventListener('input', (e) => {
+                    document.getElementById('co2Value').textContent = e.target.value + ' ppm';
+                });
+                
+                document.getElementById('yearsRange').addEventListener('input', (e) => {
+                    document.getElementById('yearsValue').textContent = e.target.value + ' years';
+                });
+
+                // AI Co-Pilot
+                document.getElementById('aiCopilotToggle').addEventListener('click', () => this.toggleAICopilot());
+                document.getElementById('closeCopilot').addEventListener('click', () => this.toggleAICopilot());
+                document.getElementById('sendAiMessage').addEventListener('click', () => this.sendAIMessage());
+                document.getElementById('aiInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendAIMessage();
+                });
+
+                // AI quick buttons
+                document.querySelectorAll('.ai-quick-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.getElementById('aiInput').value = e.target.dataset.question;
+                        this.sendAIMessage();
+                    });
+                });
+
+                // Data refresh
+                document.getElementById('refreshData').addEventListener('click', () => this.refreshData());
+            },
+
+            // View Management
+            switchView(viewName) {
+                // Update navigation buttons
+                document.querySelectorAll('.view-nav-btn').forEach(btn => {
+                    btn.classList.remove('btn-primary', 'active');
+                    btn.classList.add('btn-outline-primary');
+                });
+                
+                const activeBtn = document.querySelector(`[data-view="${viewName}"]`);
+                activeBtn.classList.remove('btn-outline-primary');
+                activeBtn.classList.add('btn-primary', 'active');
+
+                // Show/hide panels
+                document.querySelectorAll('.view-panel').forEach(panel => {
+                    panel.classList.remove('active');
+                });
+                
+                document.getElementById(viewName).classList.add('active');
+                this.currentView = viewName;
+
+                // Initialize charts for the current view
+                setTimeout(() => this.initViewCharts(viewName), 100);
+            },
+
+            switchRegion(regionName) {
+                // Update regional buttons
+                document.querySelectorAll('.regional-btn').forEach(btn => {
+                    btn.classList.remove('btn-primary', 'active');
+                    btn.classList.add('btn-outline-primary');
+                });
+                
+                const activeBtn = document.querySelector(`[data-region="${regionName}"]`);
+                activeBtn.classList.remove('btn-outline-primary');
+                activeBtn.classList.add('btn-primary', 'active');
+
+                this.currentRegion = regionName;
+                this.updateDashboard();
+            },
+
+            // Settings Management
+            openSettings() {
+                const modal = new bootstrap.Modal(document.getElementById('settingsModal'));
+                
+                // Load current settings
+                document.getElementById('apiKey').value = this.apiKey;
+                document.getElementById('refreshInterval').value = this.settings.refreshInterval || '15';
+                document.getElementById('notifications').checked = this.settings.notifications || false;
+                
+                modal.show();
+            },
+
+            saveSettings() {
+                const apiKey = document.getElementById('apiKey').value;
+                const refreshInterval = document.getElementById('refreshInterval').value;
+                const notifications = document.getElementById('notifications').checked;
+
+                this.apiKey = apiKey;
+                this.settings = {
+                    refreshInterval,
+                    notifications,
+                    lastUpdated: Date.now()
+                };
+
+                localStorage.setItem('climate-api-key', apiKey);
+                localStorage.setItem('climate-settings', JSON.stringify(this.settings));
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+                modal.hide();
+
+                // Show success message
+                this.showNotification('Settings saved successfully!', 'success');
+            },
+
+            loadSettings() {
+                const savedSettings = localStorage.getItem('climate-settings');
+                if (savedSettings) {
+                    this.settings = JSON.parse(savedSettings);
+                }
+            },
+
+            // Chart Management
+            initCharts() {
+                const isDark = this.theme === 'dark';
+                const textColor = isDark ? '#f1f5f9' : '#1e293b';
+                const gridColor = isDark ? '#334155' : '#e2e8f0';
+
+                Chart.defaults.color = textColor;
+                Chart.defaults.borderColor = gridColor;
+
+                this.initViewCharts('dashboard');
+            },
+
+            initViewCharts(viewName) {
+                if (viewName === 'dashboard' || viewName === 'all') {
+                    this.createTemperatureChart();
+                }
+                if (viewName === 'simulator' || viewName === 'all') {
+                    this.createSimulationChart();
+                }
+                if (viewName === 'analysis' || viewName === 'all') {
+                    this.createCO2Chart();
+                    this.createSeaLevelChart();
+                }
+            },
+
+            createTemperatureChart() {
+                const ctx = document.getElementById('temperatureChart');
+                if (!ctx) return;
+
+                if (this.charts.temperature) {
+                    this.charts.temperature.destroy();
+                }
+
+                const data = this.generateTemperatureData();
+                
+                this.charts.temperature = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Global Temperature Anomaly (°C)',
+                            data: data.values,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        // maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Temperature Anomaly (°C)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Year'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            }
+                        }
+                    }
+                });
+            },
+
+            createSimulationChart() {
+                const ctx = document.getElementById('simulationChart');
+                if (!ctx) return;
+
+                if (this.charts.simulation) {
+                    this.charts.simulation.destroy();
+                }
+
+                this.charts.simulation = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'Projected Temperature Change',
+                            data: [],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        // maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Temperature Change (°C)'
+                                }
+                            }
+                        }
+                    }
+                });
+            },
+
+            createCO2Chart() {
+                const ctx = document.getElementById('co2Chart');
+                if (!ctx) return;
+
+                if (this.charts.co2) {
+                    this.charts.co2.destroy();
+                }
+
+                const data = this.generateCO2Data();
+                
+                this.charts.co2 = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'CO₂ Concentration (ppm)',
+                            data: data.values,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        // maintainAspectRatio: false
+                    }
+                });
+            },
+
+            createSeaLevelChart() {
+                const ctx = document.getElementById('seaLevelChart');
+                if (!ctx) return;
+
+                if (this.charts.seaLevel) {
+                    this.charts.seaLevel.destroy();
+                }
+
+                const data = this.generateSeaLevelData();
+                
+                this.charts.seaLevel = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Sea Level Rise (mm)',
+                            data: data.values,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        // maintainAspectRatio: false
+                    }
+                });
+            },
+
+            updateChartsTheme() {
+                Object.values(this.charts).forEach(chart => {
+                    if (chart && chart.update) {
+                        chart.update();
+                    }
+                });
+            },
+
+            // Data Generation
+            generateTemperatureData() {
+                const currentYear = new Date().getFullYear();
+                const years = Array.from({length: 30}, (_, i) => currentYear - 29 + i);
+                const baseTemp = this.getRegionalBaseTemp();
+                
+                return {
+                    labels: years,
+                    values: years.map((year, i) => {
+                        const trend = (i * 0.02) + (Math.random() - 0.5) * 0.3;
+                        return +(baseTemp + trend).toFixed(2);
+                    })
+                };
+            },
+
+            generateCO2Data() {
+                const currentYear = new Date().getFullYear();
+                const years = Array.from({length: 20}, (_, i) => currentYear - 19 + i);
+                
+                return {
+                    labels: years,
+                    values: years.map((year, i) => 380 + (i * 2.1) + (Math.random() - 0.5) * 3)
+                };
+            },
+
+            generateSeaLevelData() {
+                const currentYear = new Date().getFullYear();
+                const years = Array.from({length: 25}, (_, i) => currentYear - 24 + i);
+                
+                return {
+                    labels: years,
+                    values: years.map((year, i) => (i * 3.2) + (Math.random() - 0.5) * 2)
+                };
+            },
+
+            getRegionalBaseTemp() {
+                const regionalTemps = {
+                    global: 0.85,
+                    'north-america': 1.2,
+                    europe: 1.1,
+                    asia: 0.9,
+                    africa: 0.7,
+                    'south-america': 0.8,
+                    oceania: 0.9,
+                    arctic: 2.3
+                };
+                return regionalTemps[this.currentRegion] || 0.85;
+            },
+
+            // Simulation Functions
+            runSimulation() {
+                const co2Level = document.getElementById('co2Range').value;
+                const years = document.getElementById('yearsRange').value;
+                const scenario = document.getElementById('scenarioSelect').value;
+
+                // Show loading state
+                const btn = document.getElementById('runSimulation');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Running...';
+                btn.disabled = true;
+
+                // Simulate processing time
+                setTimeout(() => {
+                    this.generateSimulationResults(co2Level, years, scenario);
+                    
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    
+                    this.showNotification('Simulation completed successfully!', 'success');
+                }, 2000);
+            },
+
+            generateSimulationResults(co2, years, scenario) {
+                const multipliers = {
+                    optimistic: 0.7,
+                    moderate: 1.0,
+                    pessimistic: 1.4
+                };
+
+                const multiplier = multipliers[scenario];
+                const yearsArray = Array.from({length: parseInt(years)}, (_, i) => new Date().getFullYear() + i);
+                
+                const projectedData = yearsArray.map((year, i) => {
+                    const co2Impact = (parseInt(co2) - 400) * 0.01;
+                    const timeImpact = i * 0.05 * multiplier;
+                    return +(co2Impact + timeImpact + (Math.random() - 0.5) * 0.2).toFixed(2);
+                });
+
+                this.charts.simulation.data.labels = yearsArray;
+                this.charts.simulation.data.datasets[0].data = projectedData;
+                this.charts.simulation.update();
+            },
+
+            resetSimulation() {
+                document.getElementById('co2Range').value = 421;
+                document.getElementById('yearsRange').value = 50;
+                document.getElementById('scenarioSelect').value = 'moderate';
+                document.getElementById('co2Value').textContent = '421 ppm';
+                document.getElementById('yearsValue').textContent = '50 years';
+                
+                if (this.charts.simulation) {
+                    this.charts.simulation.data.labels = [];
+                    this.charts.simulation.data.datasets[0].data = [];
+                    this.charts.simulation.update();
+                }
+            },
+
+            // AI Co-Pilot Functions
+            toggleAICopilot() {
+                const panel = document.getElementById('aiCopilotPanel');
+                const isVisible = panel.style.display !== 'none';
+                panel.style.display = isVisible ? 'none' : 'block';
+            },
+
+            sendAIMessage() {
+                const input = document.getElementById('aiInput');
+                const message = input.value.trim();
+                if (!message) return;
+
+                this.addChatMessage(message, 'user');
+                input.value = '';
+
+                // Simulate AI response
+                setTimeout(() => {
+                    const response = this.generateAIResponse(message);
+                    this.addChatMessage(response, 'ai');
+                }, 1000);
+            },
+
+            addChatMessage(message, sender) {
+                const chatContainer = document.getElementById('aiChat');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${sender}`;
+                
+                const icon = sender === 'ai' ? '<i class="fas fa-robot me-2"></i>' : '<i class="fas fa-user me-2"></i>';
+                messageDiv.innerHTML = `${icon}${message}`;
+                
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            },
+
+            generateAIResponse(message) {
+                const responses = {
+                    temperature: "Based on current data, global temperatures have risen by approximately 1.1°C since pre-industrial times. The trend shows continued warming, with regional variations.",
+                    co2: "Current CO₂ levels are at 421 ppm, the highest in human history. Each year, levels increase by approximately 2-3 ppm due to fossil fuel emissions and deforestation.",
+                    'sea level': "Sea levels are rising at an average rate of 3.6mm per year. This is primarily due to thermal expansion of seawater and melting ice sheets.",
+                    simulation: "Climate simulations use complex models to project future scenarios based on different emission pathways and policy implementations.",
+                    default: "I can help you understand climate data, run simulations, and analyze trends. Try asking about temperature, CO₂, sea levels, or specific regions."
+                };
+
+                const lowerMessage = message.toLowerCase();
+                for (const [key, response] of Object.entries(responses)) {
+                    if (lowerMessage.includes(key)) {
+                        return response;
+                    }
+                }
+                return responses.default;
+            },
+
+            // Data Management
+            updateDashboard() {
+                const regionData = this.getRegionalData(this.currentRegion);
+                
+                document.getElementById('globalTemp').textContent = regionData.temperature;
+                document.getElementById('co2Level').textContent = regionData.co2;
+                document.getElementById('seaLevel').textContent = regionData.seaLevel;
+                document.getElementById('iceExtent').textContent = regionData.iceExtent;
+
+                // Update charts
+                if (this.charts.temperature) {
+                    const newData = this.generateTemperatureData();
+                    this.charts.temperature.data.labels = newData.labels;
+                    this.charts.temperature.data.datasets[0].data = newData.values;
+                    this.charts.temperature.update();
+                }
+            },
+
+            getRegionalData(region) {
+                const data = {
+                    global: { temperature: '15.2°C', co2: '421', seaLevel: '+3.6mm', iceExtent: '4.9M' },
+                    'north-america': { temperature: '16.8°C', co2: '425', seaLevel: '+3.8mm', iceExtent: '4.7M' },
+                    europe: { temperature: '16.1°C', co2: '418', seaLevel: '+3.4mm', iceExtent: '4.8M' },
+                    asia: { temperature: '15.9°C', co2: '423', seaLevel: '+3.9mm', iceExtent: '4.6M' },
+                    africa: { temperature: '24.7°C', co2: '415', seaLevel: '+4.1mm', iceExtent: '5.1M' },
+                    'south-america': { temperature: '25.3°C', co2: '419', seaLevel: '+3.7mm', iceExtent: '5.0M' },
+                    oceania: { temperature: '21.8°C', co2: '417', seaLevel: '+4.3mm', iceExtent: '4.5M' },
+                    arctic: { temperature: '-10.2°C', co2: '420', seaLevel: '+5.2mm', iceExtent: '3.8M' }
+                };
+                
+                return data[region] || data.global;
+            },
+
+            refreshData() {
+                const btn = document.getElementById('refreshData');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+                btn.disabled = true;
+
+                setTimeout(() => {
+                    this.updateDashboard();
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    this.showNotification('Data refreshed successfully!', 'info');
+                }, 1500);
+            },
+
+            // Utility Functions
+            showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+                notification.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 300px;';
+                notification.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 3000);
+            }
+        };
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            ClimateApp.init();
+        });
+    </script>
+
+      <script>
+        const createFloatingBall = ()=>{let a=document.createElement("style");a.textContent=`
+          .fellou-floating-ball {
+              position: fixed;
+              bottom: 20px;
+              right: 20px;
+              background: #fff;
+              border-radius: 50%;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+              display: flex;
+              gap: 8px;
+              flex-direction: row;
+              align-items: center;
+              justify-content: center;
+              cursor: pointer;
+              transition: all 0.15s ease;
+              z-index: 100000;
+              width: 28px;
+              height: 28px;
+              text-align: center;
+              border: 2px solid #f4f4f4;
+          }
+
+          .fellou-floating-ball:hover {
+              width: 140px;
+              border-radius: 99px;
+          }
+
+          .fellou-floating-ball svg {
+              width: 16px;
+              height: 16px;
+          }
+
+          .fellou-floating-ball-text {
+              display: none;
+              width: 0px;
+              transition: width 0.3s ease;
+              color: #595561;
+              font-size: 12px;
+              font-style: normal;
+              font-weight: 400;
+              line-height: 20px;
+              white-space: nowrap;
+              overflow: hidden;
+           
+          }
+
+          .fellou-floating-ball:hover .fellou-floating-ball-text {
+              display: block;
+              width: 100px;
+          }
+      `,document.head.appendChild(a);let b=document.createElement("div");b.className="fellou-floating-ball",b.addEventListener("click",()=>{window.open("https://fellou.ai","_blank")}),b.innerHTML=`
+          <svg width="16" height="16" viewBox="0 0 152 152" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path opacity="0.72" d="M108.71 15.909C133.671 36.8541 134.337 77.1554 110.197 105.924C86.0565 134.694 46.2518 141.036 21.2904 120.091C-3.67096 99.1459 -4.33674 58.8446 19.8034 30.0755C43.9435 1.30644 83.7482 -5.03614 108.71 15.909ZM102.282 23.5694C81.8118 6.39315 48.2407 11.7425 27.4638 36.5034C6.68694 61.2643 7.24845 95.2543 27.7183 112.431C48.1882 129.607 81.7593 124.258 102.536 99.4966C123.313 74.7357 122.752 40.7457 102.282 23.5694Z" fill="url(#paint0_linear_34_1408)"/>
+              <path d="M116.986 29.3811C141.525 49.9712 143.286 88.2698 120.921 114.924C98.5561 141.577 60.5333 146.493 35.995 125.903C11.4567 105.313 9.69493 67.0139 32.06 40.3602C54.4252 13.7065 92.4479 8.79095 116.986 29.3811ZM110.558 37.0415C90.3987 20.1255 58.6488 24.2301 39.7205 46.788C20.7921 69.346 22.2632 101.326 42.4229 118.242C62.5825 135.158 94.3324 131.054 113.261 108.496C132.189 85.9377 130.718 53.9574 110.558 37.0415Z" fill="url(#paint1_linear_34_1408)"/>
+              <path d="M131.544 35.0694C155.71 55.3471 155.731 95.1074 131.591 123.876C107.451 152.646 68.291 159.529 44.1249 139.251C19.9589 118.974 19.9379 79.2135 44.078 50.4444C68.2182 21.6753 107.378 14.7917 131.544 35.0694ZM125.116 42.7299C105.505 26.2745 72.5526 32.067 51.7385 56.8723C30.9244 81.6776 30.9421 115.136 50.5528 131.591C70.1636 148.046 103.116 142.254 123.931 117.449C144.745 92.6433 144.727 59.1852 125.116 42.7299Z" fill="url(#paint2_linear_34_1408)"/>
+              <defs>
+                  <linearGradient id="paint0_linear_34_1408" x1="108.71" y1="15.909" x2="21.2904" y2="120.091" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#6401F8" stop-opacity="0.7"/>
+                      <stop offset="0.465" stop-color="#FF9000" stop-opacity="0.42"/>
+                      <stop offset="1" stop-color="#33B3FF" stop-opacity="0.2"/>
+                  </linearGradient>
+                  <linearGradient id="paint1_linear_34_1408" x1="116.986" y1="29.381" x2="35.995" y2="125.903" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#6401F8" stop-opacity="0.7"/>
+                      <stop offset="0.465" stop-color="#FF9000" stop-opacity="0.42"/>
+                      <stop offset="1" stop-color="#33B3FF" stop-opacity="0.2"/>
+                  </linearGradient>
+                  <linearGradient id="paint2_linear_34_1408" x1="131.544" y1="35.0694" x2="44.1249" y2="139.251" gradientUnits="userSpaceOnUse">
+                      <stop stop-color="#6401F8"/>
+                      <stop offset="0.5" stop-color="#FF9000"/>
+                      <stop offset="1" stop-color="#33B3FF"/>
+                  </linearGradient>
+              </defs>
+          </svg>
+      `;let c=document.createElement("div");c.className="fellou-floating-ball-text",c.textContent="powered by fellou",b.appendChild(c),document.body.appendChild(b)};
+        // Call createFloatingBall when the page loads
+        window.addEventListener('load', createFloatingBall);
+      </script>
+    </body>
+</html>
